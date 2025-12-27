@@ -1,0 +1,42 @@
+{
+  "name": "claude-plugin-skill-builder",
+  "version": "1.0.0",
+  "description": "Claude Code skill for creating new skills with best practices",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "claude-plugin",
+    "skill-builder",
+    "meta-skill",
+    "templates",
+    "developer-tools",
+    "scaffolding"
+  ],
+  "author": "wrsmith108",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wrsmith108/skill-builder-claude-skill.git"
+  },
+  "homepage": "https://github.com/wrsmith108/skill-builder-claude-skill#readme",
+  "bugs": {
+    "url": "https://github.com/wrsmith108/skill-builder-claude-skill/issues"
+  },
+  "files": [
+    "skills",
+    "templates",
+    "BEST-PRACTICES.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "create-repo": "node skills/skill-builder/scripts/create-repo.mjs"
+  },
+  "claude-plugin": {
+    "name": "Skill Builder",
+    "description": "Create Claude Code skills with templates and best practices from mature skills",
+    "skills": [
+      "skills/skill-builder"
+    ]
+  }
+}

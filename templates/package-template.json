@@ -1,0 +1,40 @@
+{
+  "name": "claude-plugin-{{SKILL_NAME}}",
+  "version": "1.0.0",
+  "description": "Claude Code skill for {{DESCRIPTION_LOWERCASE}}",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "claude-plugin",
+    "{{TOPIC_1}}",
+    "{{TOPIC_2}}",
+    "{{TOPIC_3}}"
+  ],
+  "author": "{{AUTHOR}}",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/{{AUTHOR}}/{{SKILL_NAME}}-claude-skill.git"
+  },
+  "homepage": "https://github.com/{{AUTHOR}}/{{SKILL_NAME}}-claude-skill#readme",
+  "bugs": {
+    "url": "https://github.com/{{AUTHOR}}/{{SKILL_NAME}}-claude-skill/issues"
+  },
+  "files": [
+    "skills",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "setup": "node skills/{{SKILL_NAME}}/scripts/setup.mjs",
+    "check": "node skills/{{SKILL_NAME}}/scripts/setup.mjs"
+  },
+  "claude-plugin": {
+    "name": "{{SKILL_TITLE}}",
+    "description": "{{PLUGIN_DESCRIPTION}}",
+    "skills": [
+      "skills/{{SKILL_NAME}}"
+    ]
+  }
+}
