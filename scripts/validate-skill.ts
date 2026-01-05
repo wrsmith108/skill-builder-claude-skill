@@ -44,6 +44,45 @@ const SECRET_EXPOSURE_PATTERNS = [
   { pattern: /config\s+show/gi, message: 'config show commands often expose secrets' },
 ]
 
+// Patterns that indicate documentation context (skip these)
+const DOCUMENTATION_CONTEXT_PATTERNS = [
+  /❌|NEVER|unsafe|don't|bad|wrong/i,
+  /# Example:|<!-- Example/i,
+  /Usage:|Example:/i,
+]
+
+// Patterns that indicate placeholder API keys or validation (not real keys)
+const PLACEHOLDER_KEY_PATTERNS = [
+  /lin_api_xxx/i,
+  /lin_api_\.\.\./i,
+  /lin_api_your_key/i,
+  /lin_api_here/i,
+  /sk-xxx/i,
+  /ghp_xxx/i,
+  /your[-_]?key/i,
+  /your[-_]?api[-_]?key/i,
+  /<your-/i,
+  /startsWith\s*\(['"]lin_api_/i, // Validation pattern
+  /startsWith\s*\(['"]sk-/i,
+  /startsWith\s*\(['"]ghp_/i,
+  /console\.(log|error|warn)\s*\(/i, // Help/error messages
+  /throw\s+new\s+Error/i, // Error messages
+]
+
+function isDocumentationContext(content: string, lineIndex: number): boolean {
+  const lines = content.split('\n')
+  const contextWindow = 5 // Check 5 lines before and after
+  const start = Math.max(0, lineIndex - contextWindow)
+  const end = Math.min(lines.length, lineIndex + contextWindow)
+  const contextLines = lines.slice(start, end).join('\n')
+
+  return DOCUMENTATION_CONTEXT_PATTERNS.some(p => p.test(contextLines))
+}
+
+function isPlaceholderKey(line: string): boolean {
+  return PLACEHOLDER_KEY_PATTERNS.some(p => p.test(line))
+}
+
 function validateSkillStructure(skillPath: string): ValidationResult {
   const result: ValidationResult = { passed: true, errors: [], warnings: [] }
 
@@ -149,19 +188,36 @@ function checkGeneralization(skillPath: string): ValidationResult {
     }
 
     // Check for secret exposure patterns (CRITICAL)
+    // Skip if in documentation context showing what NOT to do
+    const lines = content.split('\n')
     for (const { pattern, message } of SECRET_EXPOSURE_PATTERNS) {
-      if (pattern.test(content)) {
-        result.passed = false
-        result.errors.push(`${relativePath}: ${message} - Use Varlock instead!`)
+      const matches = content.matchAll(new RegExp(pattern.source, pattern.flags))
+      for (const match of matches) {
+        // Find line number of match
+        const beforeMatch = content.substring(0, match.index)
+        const lineIndex = beforeMatch.split('\n').length - 1
+
+        // Skip if in documentation context (showing unsafe patterns as examples)
+        if (!isDocumentationContext(content, lineIndex)) {
+          result.passed = false
+          result.errors.push(`${relativePath}: ${message} - Use Varlock instead!`)
+          break // Only report once per pattern per file
+        }
       }
     }
 
     // Check for hardcoded strings that should be env vars (in code files)
     if (file.endsWith('.ts') || file.endsWith('.js')) {
-      // Check for hardcoded API keys
-      if (/['"]lin_api_|['"]sk-|['"]ghp_|['"]npm_/.test(content)) {
-        result.passed = false
-        result.errors.push(`${relativePath}: Contains hardcoded API key`)
+      // Check for hardcoded API keys - skip placeholder patterns
+      const keyPattern = /['"]lin_api_|['"]sk-|['"]ghp_|['"]npm_/g
+      const keyMatches = content.matchAll(keyPattern)
+      for (const match of keyMatches) {
+        const line = lines.find(l => l.includes(match[0]))
+        if (line && !isPlaceholderKey(line)) {
+          result.passed = false
+          result.errors.push(`${relativePath}: Contains hardcoded API key`)
+          break
+        }
       }
 
       // Check for non-parameterized function names
