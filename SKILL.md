@@ -136,7 +136,7 @@ version: 1.0.0
 
 **Behavioral Classification (required in body):**
 
-Every skill MUST include a Behavioral Classification section immediately after the title. See [ADR-025](docs/adr/025-skill-behavioral-classification.md).
+Every skill MUST include a Behavioral Classification section immediately after the title.
 
 ```markdown
 ## Behavioral Classification
