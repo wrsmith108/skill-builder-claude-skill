@@ -40,6 +40,76 @@ export async function linkProjectsToInitiative(initiativeId: string, filter?) { 
 
 ---
 
+## Behavioral Classification (ADR-025)
+
+Every skill must declare its behavioral type. This determines how the skill interacts with users.
+
+### 1. Autonomous Execution
+
+**Directive**: EXECUTE, DON'T ASK
+
+Skills that follow a prescribed workflow automatically. No permission-seeking.
+
+| Use For | Examples |
+|---------|----------|
+| Enforcement/compliance | governance, docker-enforce |
+| Automated fixes | lint-fix, format |
+| CI/CD integrations | deploy, release |
+
+### 2. Guided Decision
+
+**Directive**: ASK, THEN EXECUTE
+
+Skills that ask structured questions upfront, then execute based on decisions.
+
+| Use For | Examples |
+|---------|----------|
+| Planning/architecture | wave-planner, mcp-decision-helper |
+| Configuration wizards | init, setup |
+| Template generators | skill-builder |
+
+### 3. Interactive Exploration
+
+**Directive**: ASK THROUGHOUT
+
+Skills with ongoing dialogue. The conversation IS the value.
+
+| Use For | Examples |
+|---------|----------|
+| Research/exploration | researcher |
+| Browser automation | dev-browser |
+| Debugging sessions | debugger |
+
+### 4. Configurable Enforcement
+
+**Directive**: USER-CONFIGURED
+
+Skills that adapt behavior based on project/user configuration.
+
+| Use For | Examples |
+|---------|----------|
+| Security tools with severity levels | varlock, security-auditor |
+| Linting with configurable strictness | eslint-wrapper |
+| Environment-dependent workflows | ci-doctor |
+
+### Classification Decision Tree
+
+```
+Does the skill need user input to work?
+│
+├─ NO → Autonomous Execution
+│
+└─ YES → Is input needed throughout, or just upfront?
+         │
+         ├─ UPFRONT → Guided Decision
+         │
+         └─ THROUGHOUT → Interactive Exploration
+
+Exception: If behavior depends on config → Configurable Enforcement
+```
+
+---
+
 ## Skill Creation Checklist
 
 ### 1. Structure Validation
@@ -63,6 +133,20 @@ version: 1.0.0
 ---
 ```
 
+**Behavioral Classification (required in body):**
+
+Every skill MUST include a Behavioral Classification section immediately after the title. See [ADR-025](docs/adr/025-skill-behavioral-classification.md).
+
+```markdown
+## Behavioral Classification
+
+**Type**: [Autonomous Execution | Guided Decision | Interactive Exploration | Configurable Enforcement]
+
+**Directive**: [EXECUTE, DON'T ASK | ASK, THEN EXECUTE | ASK THROUGHOUT | USER-CONFIGURED]
+
+[Brief description of how the skill interacts with users]
+```
+
 **Body requirements:**
 - Use imperative form ("Configure the server", not "You should configure")
 - Keep under 2,000 words (move details to references/)
@@ -73,12 +157,71 @@ version: 1.0.0
 
 Before publishing or committing any skill:
 
+- [ ] **Behavioral classification declared**: Type and directive documented
 - [ ] **No hardcoded IDs**: UUIDs, project IDs, initiative IDs → environment variables
 - [ ] **No specific names**: Project names, company names → generic examples
 - [ ] **No personal URLs**: API endpoints, webhooks → configurable via env vars
 - [ ] **No internal references**: Team names, internal docs → generic documentation
 - [ ] **Environment variables documented**: All required env vars listed
 - [ ] **Generic examples**: Examples use placeholder values like `<your-uuid>`
+
+### 3.1 Documentation Generalization (MANDATORY)
+
+**CRITICAL**: ALL documentation files (README.md, references/, examples/, lessons-learned.md) MUST be fully generalized. This is non-negotiable for public skills.
+
+#### What to Generalize in Documentation
+
+| ❌ Project-Specific | ✅ Generic Replacement |
+|--------------------|------------------------|
+| "Skillsmith" | "[Project Name]" or "your project" |
+| "SMI-1234" (Linear issues) | "[ISSUE-ID]" or "[Tracking Issue]" |
+| "Apache-2.0 to Elastic License 2.0" | "[Old License] to [New License]" |
+| "ADR-013", "ADR-017" | "ADR-XXX", "ADR-YYY" |
+| Specific file paths from a project | Generic paths like "docs/adr/*.md" |
+| Company names (Smith Horn Group, etc.) | "[Your Company]" or omit entirely |
+| Real dates tied to a project | "[Date]" or "[Month Year]" |
+
+#### Case Studies and Examples
+
+When including case studies or lessons learned:
+
+```markdown
+# ❌ BAD - Project-specific case study
+## Case Study: Skillsmith License Migration (January 2026)
+After migrating Skillsmith from Apache-2.0 to Elastic License 2.0...
+Created Linear issue SMI-1369...
+
+# ✅ GOOD - Generalized case study
+## Case Study: License Migration (Generic Example)
+After migrating a project from an open-source license (e.g., Apache-2.0, MIT)
+to a source-available license (e.g., Elastic License 2.0, BSL)...
+Created tracking issue [ISSUE-ID]...
+```
+
+#### Templates Must Use Placeholders
+
+All templates in a skill must use generic placeholders:
+
+```markdown
+# ❌ BAD - Specific project in template
+> **Linear Issue:** SMI-XXXX (to be created)
+> See [ADR-013](../adr/013-open-core-licensing.md)
+
+# ✅ GOOD - Generic placeholders
+> **Tracking Issue:** [ISSUE-ID] (to be created)
+> See [ADR-XXX](../adr/XXX.md)
+```
+
+#### Automatic Generalization Check
+
+Before publishing ANY skill, run:
+```bash
+# Search for common project-specific patterns
+grep -ri "skillsmith\|smi-[0-9]\|smith.horn" skill-name/
+grep -ri "lin_api_\|api_key.*=" skill-name/  # Exposed secrets
+```
+
+**If ANY matches are found, the skill is NOT ready for publishing.**
 
 ### 4. Varlock for Secrets Management
 
@@ -290,15 +433,110 @@ npx tsx ~/.claude/skills/skill-builder/scripts/check-generalization.ts path/to/s
 
 ---
 
+## Subagent Pair Generation
+
+### When to Generate a Subagent
+
+Generate a companion subagent when the skill:
+- Produces verbose output (>500 tokens working context)
+- Involves document processing (PDF, Excel, large files)
+- Performs multi-file analysis or code review
+- Runs test suites with detailed output
+- Conducts research with iterative exploration
+
+**Token Savings**: 37-97% reduction through context isolation.
+
+### Subagent Definition Structure
+
+Every skill can have a companion subagent defined at `~/.claude/agents/[skill-name]-specialist.md`:
+
+```yaml
+---
+name: [skill-name]-specialist
+description: [Skill purpose]. Use when [trigger conditions].
+skills: [skill-name]
+tools: [minimal tool set]
+model: sonnet
+---
+
+## Operating Protocol
+
+1. Execute the [skill-name] skill for the delegated task
+2. Process all intermediate results internally
+3. Return ONLY a structured summary to the orchestrator
+
+## Output Format
+
+- **Task:** [what was requested]
+- **Actions:** [what you did]
+- **Results:** [key outcomes, max 3-5 bullet points]
+- **Artifacts:** [file paths or outputs created]
+
+Keep response under 500 tokens unless explicitly requested.
+```
+
+### Tool Set Determination
+
+| Skill Content Contains | Include Tools |
+|------------------------|---------------|
+| Always | Read |
+| write, create, edit | Write, Edit |
+| bash, npm, command | Bash |
+| search, find, grep | Grep, Glob |
+| web, fetch, url | WebFetch |
+
+### CLI Commands for Subagent Generation
+
+```bash
+# Generate subagent for a skill
+skillsmith author subagent [path] [options]
+  -o, --output <path>   Output directory (default: ~/.claude/agents)
+  --tools <tools>       Override tools (comma-separated)
+  --model <model>       Model to use (default: sonnet)
+  --skip-claude-md      Skip CLAUDE.md snippet generation
+
+# Transform existing skill (non-destructive)
+skillsmith author transform [path] [options]
+  --dry-run             Preview without creating files
+  --force               Overwrite existing subagent
+  --batch <paths>       Process multiple skills
+```
+
+### CLAUDE.md Delegation Snippet
+
+After generating a subagent, add to your CLAUDE.md:
+
+```markdown
+## Subagent Delegation
+
+When tasks match [skill-name] triggers, delegate to the [skill-name]-specialist
+subagent instead of executing directly. This provides context isolation and
+token savings.
+
+### Delegation Pattern
+- Detect: User requests [trigger phrases]
+- Delegate: Task tool with subagent_type="[skill-name]-specialist"
+- Receive: Structured summary (under 500 tokens)
+```
+
+### Template and Script References
+
+- **`templates/subagent-template.md`** - Base template for subagent generation
+- **`scripts/generate-subagent.ts`** - Generation logic and tool detection
+
+---
+
 ## Additional Resources
 
 ### Reference Files
 - **`references/generalization-patterns.md`** - Detailed patterns for generalizing skills
 - **`references/linear-retro.md`** - Full retrospective from Linear skill update
+- **`references/orchestrator-delegation.md`** - Delegation patterns for subagents
 
 ### Scripts
 - **`scripts/validate-skill.ts`** - Validate skill structure and content
 - **`scripts/check-generalization.ts`** - Check for project-specific content
+- **`scripts/generate-subagent.ts`** - Generate companion subagent for a skill
 
 ---
 
