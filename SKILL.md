@@ -119,6 +119,7 @@ skill-name/
 ├── SKILL.md              # Required: Core instructions
 ├── references/           # Optional: Detailed docs
 ├── scripts/              # Optional: Utility scripts
+├── hooks/                # Optional: Pre/post command hooks
 └── examples/             # Optional: Working examples
 ```
 
@@ -523,6 +524,128 @@ token savings.
 
 - **`templates/subagent-template.md`** - Base template for subagent generation
 - **`scripts/generate-subagent.ts`** - Generation logic and tool detection
+
+---
+
+## Enforcement Hooks Pattern (Optional)
+
+Skills can include pre/post command hooks for policy enforcement. This pattern is optional and most useful for skills that enforce development policies.
+
+### When to Add Hooks
+
+Add a `hooks/` directory when your skill needs to:
+- Intercept commands before execution (pre-command)
+- Validate environment state
+- Transform commands automatically
+- Enforce project policies
+
+### Hooks Directory Structure
+
+```
+skill-name/
+├── SKILL.md
+├── hooks/
+│   ├── pre-command.sh    # Runs before commands
+│   └── post-command.sh   # Runs after commands (optional)
+└── scripts/
+```
+
+### Pre-Command Hook Template
+
+```bash
+#!/bin/bash
+# Pre-command hook for [skill-name]
+# Called automatically by Claude Code hooks system
+
+set -euo pipefail
+
+COMMAND="${1:-}"
+CONFIG_FILE=".claude/[skill-name]-config.json"
+
+# Load configuration
+load_config() {
+    if [[ -f "$CONFIG_FILE" ]]; then
+        # Parse config
+        ENFORCEMENT=$(grep -o '"enforcement".*"[^"]*"' "$CONFIG_FILE" | cut -d'"' -f4 || echo "warn")
+    else
+        ENFORCEMENT="warn"
+    fi
+}
+
+# Check if command should be intercepted
+should_intercept() {
+    # Add pattern matching logic
+    echo "$COMMAND" | grep -qE "^pattern"
+}
+
+# Main enforcement
+main() {
+    load_config
+
+    if ! should_intercept; then
+        exit 0  # Allow command
+    fi
+
+    case "$ENFORCEMENT" in
+        block)
+            echo "ERROR: Policy violation" >&2
+            exit 1
+            ;;
+        warn)
+            echo "WARNING: Consider alternative approach" >&2
+            exit 0
+            ;;
+        transform)
+            # Transform and execute
+            exec transformed-command
+            ;;
+    esac
+}
+
+main "$@"
+```
+
+### Configuration Pattern
+
+Skills with hooks should support a configuration file:
+
+```json
+{
+  "enforcement": "block|warn|transform|disabled",
+  "allowedPatterns": ["pattern1", "pattern2"],
+  "options": {}
+}
+```
+
+### Example: docker-enforce
+
+The `docker-enforce` skill demonstrates this pattern:
+
+| Component | Purpose |
+|-----------|---------|
+| `hooks/pre-command.sh` | Intercepts npm/node commands |
+| `.claude/docker-config.json` | Per-project configuration |
+| Enforcement modes | block, warn, transform, disabled |
+
+### Integration with Claude Code
+
+To enable hooks in Claude Code, add to `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": "bash ~/.claude/skills/[skill-name]/hooks/pre-command.sh \"$COMMAND\""
+      }]
+    }]
+  }
+}
+```
+
+**Note**: Hooks integration is optional and should only be added when the skill genuinely needs to enforce policies.
 
 ---
 
