@@ -1,7 +1,29 @@
 ---
 name: Skill Builder
-description: This skill should be used when the user asks to "create a skill", "update a skill", "review my skill", "improve skill quality", "publish a skill", or when modifying any skill in ~/.claude/skills/. Enforces generalization rules and quality standards for skills intended for public use.
-version: 1.0.0
+description: >
+  This skill should be used when the user asks to "create a skill", "update a skill",
+  "review my skill", "improve skill quality", "publish a skill", "generalize skill",
+  "check for hardcoded values", "review for specific references", "validate skill for publishing",
+  or when modifying any skill in ~/.claude/skills/. Enforces generalization rules and
+  quality standards for skills intended for public use.
+version: 1.1.0
+triggers:
+  keywords:
+    - create a skill
+    - update a skill
+    - review my skill
+    - improve skill quality
+    - publish a skill
+    - generalize skill
+    - check for hardcoded
+    - specific references
+    - validate skill
+    - skill for publishing
+  paths:
+    - ~/.claude/skills/**
+  explicit:
+    - /skill-builder
+    - /validate-skill
 ---
 
 # Skill Builder
@@ -671,9 +693,54 @@ To enable hooks in Claude Code, add to `.claude/settings.json`:
 - Reviewing skills before publishing
 - Committing changes to skill repositories
 
+### Automatic Triggering via Claude Code Hooks
+
+Add to `~/.claude/settings.json` to automatically trigger skill-builder validation when editing skills:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [{
+      "matcher": "Edit|Write",
+      "hooks": [{
+        "type": "command",
+        "command": "bash -c 'if [[ \"$CLAUDE_TOOL_ARG_FILE_PATH\" == */.claude/skills/* ]]; then echo \"[skill-builder] Reminder: Run generalization check before committing\"; fi'"
+      }]
+    }]
+  }
+}
+```
+
+This hook provides a reminder when editing skill files. For full validation, run:
+
+```bash
+# Check for project-specific content
+grep -ri "skillsmith\|smi-[0-9]\|specific-uuid" ~/.claude/skills/<skill-name>/
+
+# Or use the validation script
+npx tsx ~/.claude/skills/skill-builder/scripts/check-generalization.ts ~/.claude/skills/<skill-name>/
+```
+
+### CLAUDE.md Integration
+
 To ensure this skill is used, add to your CLAUDE.md:
+
 ```markdown
 ## Skill Development
-When creating or updating skills, always use the skill-builder skill to validate
-generalization and quality standards before committing.
+
+When creating or updating skills in `~/.claude/skills/`, always:
+
+1. **Invoke skill-builder** for validation: `/skill-builder` or "validate skill"
+2. **Run generalization check** before committing
+3. **Review for specific references** (project names, UUIDs, internal docs)
+
+The skill-builder skill enforces generalization rules and quality standards.
 ```
+
+### Why This Matters
+
+**Lesson learned from SMI-1735**: During the Skill Architecture Refactor, skills were edited without invoking skill-builder, resulting in project-specific references that required a second pass to generalize.
+
+**Root cause**: The trigger phrases didn't include "review for specific references" or "generalize", and there was no automatic hook to remind about validation.
+
+**Fix applied**: Added trigger phrases and documented hook pattern in v1.1.0.
