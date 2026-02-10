@@ -122,6 +122,13 @@ Before publishing your new skill:
 - [ ] CHANGELOG.md has v1.0.0 with "Lesson Learned"
 - [ ] Topics include `claude`, `claude-code`, `claude-plugin`
 
+## Changelog
+
+### 1.0.1 (2026-02-10)
+
+- **Fixed**: Replaced hardcoded `~/.claude/skills/` paths with relative paths for portability
+- **Fixed**: Corrected `create-repo.mjs` path to use `skills/skill-builder/scripts/` nested structure
+
 ## Contributing
 
 Contributions welcome! Please submit issues and PRs for:
