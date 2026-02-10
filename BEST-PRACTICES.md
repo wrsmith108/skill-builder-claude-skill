@@ -59,7 +59,7 @@ allowed-tools:
 
 ### 1. Verify Setup
 ```bash
-node ~/.claude/skills/<name>/scripts/setup.mjs
+node scripts/setup.mjs
 ```
 
 ### 2. Common Operations

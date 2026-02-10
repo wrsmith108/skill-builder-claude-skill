@@ -22,7 +22,7 @@ allowed-tools:
 
 ```bash
 # Run setup check
-node ~/.claude/skills/{{SKILL_NAME}}/skills/{{SKILL_NAME}}/scripts/setup.mjs
+node scripts/setup.mjs
 ```
 
 ### 2. Common Operations

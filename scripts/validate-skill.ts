@@ -7,7 +7,7 @@
  *
  * Usage:
  *   npx tsx validate-skill.ts <skill-path>
- *   npx tsx validate-skill.ts ~/.claude/skills/linear
+ *   npx tsx validate-skill.ts path/to/skill
  */
 
 import * as fs from 'fs'
@@ -314,7 +314,7 @@ function main() {
     console.log('Usage: validate-skill.ts <skill-path>')
     console.log('')
     console.log('Example:')
-    console.log('  npx tsx validate-skill.ts ~/.claude/skills/linear')
+    console.log('  npx tsx validate-skill.ts path/to/skill')
     process.exit(1)
   }
 
