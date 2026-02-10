@@ -25,7 +25,7 @@ git clone https://github.com/{{AUTHOR}}/{{SKILL_NAME}}-claude-skill ~/.claude/sk
 ### Verify Setup
 
 ```bash
-node ~/.claude/skills/{{SKILL_NAME}}/skills/{{SKILL_NAME}}/scripts/setup.mjs
+node scripts/setup.mjs
 ```
 
 ## How It Works

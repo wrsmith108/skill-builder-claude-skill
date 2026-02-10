@@ -342,7 +342,7 @@ export async function updateProject(projectId: string) { ... }
 
 Run the validation script:
 ```bash
-npx tsx ~/.claude/skills/skill-builder/scripts/validate-skill.ts skill-name/
+npx tsx scripts/validate-skill.ts skill-name/
 ```
 
 ---
@@ -448,10 +448,10 @@ Run before committing skill changes:
 
 ```bash
 # Validate a skill
-npx tsx ~/.claude/skills/skill-builder/scripts/validate-skill.ts path/to/skill
+npx tsx scripts/validate-skill.ts path/to/skill
 
 # Check for project-specific content
-npx tsx ~/.claude/skills/skill-builder/scripts/check-generalization.ts path/to/skill
+npx tsx scripts/check-generalization.ts path/to/skill
 ```
 
 ---
@@ -718,7 +718,7 @@ This hook provides a reminder when editing skill files. For full validation, run
 grep -ri "skillsmith\|smi-[0-9]\|specific-uuid" ~/.claude/skills/<skill-name>/
 
 # Or use the validation script
-npx tsx ~/.claude/skills/skill-builder/scripts/check-generalization.ts ~/.claude/skills/<skill-name>/
+npx tsx scripts/check-generalization.ts ~/.claude/skills/<skill-name>/
 ```
 
 ### CLAUDE.md Integration

@@ -43,7 +43,7 @@ mkdir -p my-skill-claude-skill/skills/my-skill/scripts
 ### 2. Copy Templates
 
 ```bash
-cp -r ~/.claude/skills/skill-builder/templates/* my-skill-claude-skill/
+cp -r templates/* my-skill-claude-skill/
 ```
 
 ### 3. Customize Files
@@ -56,7 +56,7 @@ Replace placeholders like `{{SKILL_NAME}}`, `{{DESCRIPTION}}`, etc.
 cd my-skill-claude-skill
 git init && git add -A && git commit -m "Initial release"
 
-node ~/.claude/skills/skill-builder/skills/skill-builder/scripts/create-repo.mjs \
+node scripts/create-repo.mjs \
   --name "my-skill-claude-skill" \
   --description "Claude Code skill for my purpose" \
   --topics "claude,claude-code,claude-plugin,my-domain"

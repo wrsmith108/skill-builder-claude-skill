@@ -37,7 +37,7 @@ Copy and customize these templates:
 
 ```bash
 # Copy all templates to working directory
-cp -r ~/.claude/skills/skill-builder/templates/* /path/to/new-skill/
+cp -r templates/* /path/to/new-skill/
 ```
 
 ### 3. Customize Files
@@ -53,7 +53,7 @@ Guide user through customizing:
 Run the automation script:
 
 ```bash
-node ~/.claude/skills/skill-builder/skills/skill-builder/scripts/create-repo.mjs \
+node scripts/create-repo.mjs \
   --name "<skill-name>-claude-skill" \
   --description "Claude Code skill for <purpose>" \
   --topics "claude,claude-code,claude-plugin,<domain-topics>"
@@ -276,7 +276,7 @@ Before publishing:
 mkdir -p docker-claude-skill/skills/docker/scripts
 
 # 2. Copy templates
-cp ~/.claude/skills/skill-builder/templates/* docker-claude-skill/
+cp templates/* docker-claude-skill/
 
 # 3. Customize (example)
 # - Replace {{SKILL_NAME}} with "docker"
@@ -284,7 +284,7 @@ cp ~/.claude/skills/skill-builder/templates/* docker-claude-skill/
 # - Add docker-specific patterns to SKILL.md
 
 # 4. Publish
-node ~/.claude/skills/skill-builder/skills/skill-builder/scripts/create-repo.mjs \
+node scripts/create-repo.mjs \
   --name "docker-claude-skill" \
   --description "Claude Code skill for Docker container development" \
   --topics "claude,claude-code,claude-plugin,docker,containers,devops"
