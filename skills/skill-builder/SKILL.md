@@ -53,7 +53,7 @@ Guide user through customizing:
 Run the automation script:
 
 ```bash
-node scripts/create-repo.mjs \
+node skills/skill-builder/scripts/create-repo.mjs \
   --name "<skill-name>-claude-skill" \
   --description "Claude Code skill for <purpose>" \
   --topics "claude,claude-code,claude-plugin,<domain-topics>"
@@ -284,7 +284,7 @@ cp templates/* docker-claude-skill/
 # - Add docker-specific patterns to SKILL.md
 
 # 4. Publish
-node scripts/create-repo.mjs \
+node skills/skill-builder/scripts/create-repo.mjs \
   --name "docker-claude-skill" \
   --description "Claude Code skill for Docker container development" \
   --topics "claude,claude-code,claude-plugin,docker,containers,devops"

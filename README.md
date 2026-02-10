@@ -56,7 +56,7 @@ Replace placeholders like `{{SKILL_NAME}}`, `{{DESCRIPTION}}`, etc.
 cd my-skill-claude-skill
 git init && git add -A && git commit -m "Initial release"
 
-node scripts/create-repo.mjs \
+node skills/skill-builder/scripts/create-repo.mjs \
   --name "my-skill-claude-skill" \
   --description "Claude Code skill for my purpose" \
   --topics "claude,claude-code,claude-plugin,my-domain"
