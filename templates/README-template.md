@@ -10,16 +10,18 @@ A [Claude Code](https://claude.ai/code) skill for {{DESCRIPTION_LOWERCASE}}.
 
 ## Quick Start
 
-### Option A: Claude Plugin (Recommended)
+### Option A: One-liner (Recommended)
 
 ```bash
-claude plugin add github:{{AUTHOR}}/{{SKILL_NAME}}-claude-skill
+mkdir -p ~/.claude/skills/{{SKILL_NAME}} && curl -sSL https://raw.githubusercontent.com/{{AUTHOR}}/{{SKILL_NAME}}-claude-skill/main/skills/{{SKILL_NAME}}/SKILL.md -o ~/.claude/skills/{{SKILL_NAME}}/SKILL.md
 ```
 
 ### Option B: Manual Installation
 
 ```bash
-git clone https://github.com/{{AUTHOR}}/{{SKILL_NAME}}-claude-skill ~/.claude/skills/{{SKILL_NAME}}
+git clone https://github.com/{{AUTHOR}}/{{SKILL_NAME}}-claude-skill /tmp/{{SKILL_NAME}}-skill
+cp -r /tmp/{{SKILL_NAME}}-skill/skills/{{SKILL_NAME}} ~/.claude/skills/
+rm -rf /tmp/{{SKILL_NAME}}-skill
 ```
 
 ### Verify Setup

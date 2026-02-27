@@ -11,16 +11,18 @@ A meta-skill for creating Claude Code skills following proven patterns.
 
 ## Quick Start
 
-### Option A: Claude Plugin (Recommended)
+### Option A: One-liner (Recommended)
 
 ```bash
-claude plugin add github:wrsmith108/skill-builder-claude-skill
+mkdir -p ~/.claude/skills/skill-builder && curl -sSL https://raw.githubusercontent.com/wrsmith108/skill-builder-claude-skill/main/skills/skill-builder/SKILL.md -o ~/.claude/skills/skill-builder/SKILL.md
 ```
 
 ### Option B: Manual Installation
 
 ```bash
-git clone https://github.com/wrsmith108/skill-builder-claude-skill ~/.claude/skills/skill-builder
+git clone https://github.com/wrsmith108/skill-builder-claude-skill /tmp/skill-builder-skill
+cp -r /tmp/skill-builder-skill/skills/skill-builder ~/.claude/skills/
+rm -rf /tmp/skill-builder-skill
 ```
 
 ## How It Works
