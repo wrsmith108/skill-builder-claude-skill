@@ -307,6 +307,63 @@ function checkEnvironmentDocumentation(skillPath: string): ValidationResult {
   return result
 }
 
+
+function checkPluginJsonVersionSync(skillPath: string): ValidationResult {
+  const result: ValidationResult = { passed: true, errors: [], warnings: [] }
+
+  const pluginJsonPath = path.join(skillPath, '.claude-plugin', 'plugin.json')
+  if (!fs.existsSync(pluginJsonPath)) {
+    return result // Not a marketplace skill — no check needed
+  }
+
+  // Read plugin.json version
+  let pluginVersion: string | undefined
+  try {
+    const pluginJson = JSON.parse(fs.readFileSync(pluginJsonPath, 'utf-8'))
+    pluginVersion = pluginJson.version
+  } catch {
+    result.warnings.push('.claude-plugin/plugin.json exists but could not be parsed as JSON')
+    return result
+  }
+
+  if (!pluginVersion) {
+    result.warnings.push(
+      '.claude-plugin/plugin.json exists but has no "version" field. ' +
+      'Add a version matching SKILL.md frontmatter version:'
+    )
+    return result
+  }
+
+  // Read SKILL.md frontmatter version
+  const skillMdPath = path.join(skillPath, 'SKILL.md')
+  if (!fs.existsSync(skillMdPath)) return result
+
+  const skillContent = fs.readFileSync(skillMdPath, 'utf-8')
+  const frontmatterMatch = skillContent.match(/^---\n([\s\S]*?)\n---/)
+  if (!frontmatterMatch) return result
+
+  const versionMatch = frontmatterMatch[1].match(/^version:\s*(.+)$/m)
+  const skillVersion = versionMatch?.[1]?.trim()
+
+  if (!skillVersion) {
+    result.warnings.push(
+      'SKILL.md frontmatter has no "version:" field. ' +
+      'Add version: <semver> to keep plugin.json in sync.'
+    )
+    return result
+  }
+
+  if (skillVersion !== pluginVersion) {
+    result.passed = false
+    result.errors.push(
+      `Version mismatch: SKILL.md says ${skillVersion} but .claude-plugin/plugin.json says ${pluginVersion}\n` +
+      `  Fix: Update .claude-plugin/plugin.json version to match SKILL.md`
+    )
+  }
+
+  return result
+}
+
 function main() {
   const skillPath = process.argv[2]
 
@@ -333,16 +390,20 @@ function main() {
   const envDocResult = checkEnvironmentDocumentation(resolvedPath)
 
   // Combine results
+  const pluginSyncResult = checkPluginJsonVersionSync(resolvedPath)
+
   const allErrors = [
     ...structureResult.errors,
     ...generalizationResult.errors,
-    ...envDocResult.errors
+    ...envDocResult.errors,
+    ...pluginSyncResult.errors,
   ]
 
   const allWarnings = [
     ...structureResult.warnings,
     ...generalizationResult.warnings,
-    ...envDocResult.warnings
+    ...envDocResult.warnings,
+    ...pluginSyncResult.warnings,
   ]
 
   // Print results
@@ -366,3 +427,5 @@ function main() {
 }
 
 main()
+
+
