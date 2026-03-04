@@ -745,7 +745,19 @@ node -p "require('./package.json').version"
 git tag --sort=-v:refname | head -3
 ```
 
-### Step 3: Ensure README Quality
+### Step 3a: Verify README Exists
+
+Before checking quality, confirm a README is present:
+
+```bash
+gh api repos/<org>/<repo>/contents/README.md --jq '.name' 2>/dev/null \
+  || echo "❌ NO README — must create before submitting to Anthropic"
+```
+
+If missing: create a README with the sections in Step 3b before proceeding.
+Anthropic will reject submissions without a quality README.
+
+### Step 3b: Ensure README Quality
 
 Anthropic's security review checks for a quality README with at minimum:
 
@@ -767,7 +779,7 @@ gh api repos/<org>/<repo>/contents/.claude-plugin/plugin.json \
 
 # Verify it's live and valid
 gh api repos/<org>/<repo>/contents/.claude-plugin/plugin.json \
-  --jq '.content' | base64 -d | python3 -m json.tool
+  --jq '.content' | python3 -c "import base64,sys; print(base64.b64decode(sys.stdin.read()).decode())" | python3 -m json.tool
 ```
 
 ### Step 5: Submit to Anthropic
