@@ -19,11 +19,16 @@ triggers:
     - specific references
     - validate skill
     - skill for publishing
+    - publish to claude plugin
+    - claude plugin marketplace
+    - plugin.json
+    - add to plugin directory
   paths:
     - ~/.claude/skills/**
   explicit:
     - /skill-builder
     - /validate-skill
+    - /publish-plugin
 ---
 
 # Skill Builder
@@ -684,6 +689,129 @@ To enable hooks in Claude Code, add to `.claude/settings.json`:
 - **`scripts/generate-subagent.ts`** - Generate companion subagent for a skill
 
 ---
+
+---
+
+## Publishing to Claude Plugin Marketplace
+
+Anthropic's Claude Plugin Marketplace (`anthropics/claude-plugins-official`) requires a `.claude-plugin/plugin.json` metadata file in addition to `SKILL.md`. This section covers everything needed to prepare a skill for marketplace submission.
+
+### Step 1: Create `.claude-plugin/plugin.json`
+
+Add this file to the root of the skill's GitHub repository:
+
+```json
+{
+  "name": "<slug>",
+  "description": "<description from SKILL.md, ≤150 chars>",
+  "version": "<version from SKILL.md frontmatter>",
+  "author": {
+    "name": "<Your Name>",
+    "url": "https://github.com/<your-github-username>"
+  },
+  "homepage": "https://skillsmith.app",
+  "repository": "https://github.com/<org>/<repo>",
+  "license": "MIT",
+  "keywords": ["claude-skill", "<category-keyword>"]
+}
+```
+
+**Required fields**: `name`, `description`, `author.name`
+
+**Description rules**:
+- ≤150 characters
+- No leading/trailing quotes
+- Plain sentence, not YAML multiline
+
+**Keywords convention**:
+- Always include `"claude-skill"` as the first keyword
+- Add 2-3 category keywords (e.g., `"docker"`, `"devops"`, `"containers"`)
+
+### Step 2: Verify Version Consistency
+
+Before pushing, confirm the version in `plugin.json` matches the authoritative source:
+
+| Priority | Source | Notes |
+|----------|--------|-------|
+| 1st | `SKILL.md` frontmatter `version:` | Most authoritative |
+| 2nd | `package.json` `version` | Sync to SKILL.md if different |
+| 3rd | Latest git tag | Tag should match after publishing |
+
+**Fix common drift patterns**:
+```bash
+# Check if versions are in sync
+grep "version:" SKILL.md
+node -p "require('./package.json').version"
+git tag --sort=-v:refname | head -3
+```
+
+### Step 3: Ensure README Quality
+
+Anthropic's security review checks for a quality README with at minimum:
+
+- [ ] **Features** section (what the skill does)
+- [ ] **Installation** section (`skillsmith install <org>/<name>` or manual copy instructions)
+- [ ] **Usage** section with trigger phrases and examples
+- [ ] **Requirements** section (env vars, tools, prerequisites)
+- [ ] **License** declaration
+
+### Step 4: Push `plugin.json` via `gh` CLI
+
+```bash
+# Create the file in the repo
+CONTENT=$(cat .claude-plugin/plugin.json | base64)
+gh api repos/<org>/<repo>/contents/.claude-plugin/plugin.json \
+  -X PUT \
+  -f message="feat: add Claude plugin marketplace metadata" \
+  -f content="$CONTENT"
+
+# Verify it's live and valid
+gh api repos/<org>/<repo>/contents/.claude-plugin/plugin.json \
+  --jq '.content' | base64 -d | python3 -m json.tool
+```
+
+### Step 5: Submit to Anthropic
+
+After all changes are live on GitHub:
+
+1. Open `https://clau.de/plugin-directory-submission`
+2. Fill in: name, description, author, repository URL, license, skills-only (no MCP server)
+3. Anthropic security review typically takes 1-2 weeks
+4. Once approved: installable via `/plugin install <name>@claude-plugins-official`
+
+### Checklist: Ready for Submission
+
+Before submitting, verify all of the following:
+
+- [ ] `.claude-plugin/plugin.json` exists and is valid JSON
+- [ ] `version` in `plugin.json` matches `SKILL.md` frontmatter
+- [ ] `description` is ≤150 chars, no surrounding quotes
+- [ ] `README.md` has Features + Installation + Usage + Requirements
+- [ ] No hardcoded project-specific content (run generalization check)
+- [ ] GitHub repo is public
+- [ ] `SKILL.md` has `version:` in frontmatter
+- [ ] `license` field is correct (`MIT`, `Apache-2.0`, or `Elastic License 2.0`)
+
+### Validation Command
+
+```bash
+# Quick pre-submission check
+python3 -c "
+import json, sys
+with open('.claude-plugin/plugin.json') as f:
+    d = json.load(f)
+required = ['name', 'description', 'version', 'author']
+missing = [k for k in required if k not in d]
+if missing:
+    print('MISSING FIELDS:', missing); sys.exit(1)
+if 'name' not in d.get('author', {}):
+    print('MISSING: author.name'); sys.exit(1)
+if len(d['description']) > 150:
+    print(f'DESCRIPTION TOO LONG: {len(d["description"])} chars (max 150)'); sys.exit(1)
+print('OK plugin.json valid', d['name'], 'v' + d['version'])
+"
+```
+
 
 ## Integration with Skill Updates
 
