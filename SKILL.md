@@ -6,7 +6,7 @@ description: >
   "check for hardcoded values", "review for specific references", "validate skill for publishing",
   or when modifying any skill in ~/.claude/skills/. Enforces generalization rules and
   quality standards for skills intended for public use.
-version: 1.1.0
+version: 1.3.0
 triggers:
   keywords:
     - create a skill
@@ -144,11 +144,17 @@ Exception: If behavior depends on config → Configurable Enforcement
 ```
 skill-name/
 ├── SKILL.md              # Required: Core instructions
+├── README.md             # Required: Human-readable docs and install instructions
+├── CHANGELOG.md          # Required: Version history in Keep a Changelog format
 ├── references/           # Optional: Detailed docs
 ├── scripts/              # Optional: Utility scripts
 ├── hooks/                # Optional: Pre/post command hooks
 └── examples/             # Optional: Working examples
 ```
+
+**README.md must include**: problem statement, install command (`skillsmith install <author>/<name>`), usage examples, contents table, requirements.
+
+**CHANGELOG.md must include**: `## [X.Y.Z] - YYYY-MM-DD` entry for every version with Added/Changed/Fixed sections.
 
 ### 2. SKILL.md Requirements
 
@@ -350,6 +356,174 @@ Run the validation script:
 npx tsx scripts/validate-skill.ts skill-name/
 ```
 
+### Step 5.5: Bump version and update CHANGELOG
+
+Every meaningful change to a skill requires a version bump and a CHANGELOG entry. Use semver rules:
+
+| Change type | Bump | Example |
+|-------------|------|---------|
+| Bug fix, copy correction, typo | PATCH | `1.0.0 → 1.0.1` |
+| New section, new workflow step, new trigger phrase | MINOR | `1.0.1 → 1.1.0` |
+| Renamed triggers, removed steps, behavioural change | MAJOR | `1.1.0 → 2.0.0` |
+
+```bash
+# 1. Update frontmatter
+sed -i '' 's/^version: .*/version: "X.Y.Z"/' SKILL.md
+
+# 2. Add CHANGELOG entry
+# ## [X.Y.Z] - YYYY-MM-DD
+# ### Added / Changed / Fixed
+# - Description of change
+```
+
+**Before starting any update**, record the current version so the diff is clear:
+```bash
+grep "^version:" SKILL.md   # Note this before editing
+```
+
+### Step 6: Publish — README, CHANGELOG, GitHub release, and tag (MANDATORY)
+
+Every new skill and every version bump **must** complete all four steps before the work is considered done:
+
+```bash
+# 1. Confirm README.md exists and covers: problem, install, usage, contents, requirements
+ls README.md || echo "MISSING README.md — create it before publishing"
+
+# 2. Confirm CHANGELOG.md has an entry for this version
+grep "## \[$(grep '^version:' SKILL.md | awk '{print $2}')\]" CHANGELOG.md \
+  || echo "MISSING CHANGELOG entry for this version"
+
+# 3. Commit everything
+git add .
+git commit -m "feat: <skill-name> v<X.Y.Z>"
+
+# 4. Push to GitHub
+git push
+
+# 5. Create GitHub release with tag
+VERSION=$(grep '^version:' SKILL.md | awk '{print $2}' | tr -d '"')
+gh release create "v${VERSION}" \
+  --title "v${VERSION}" \
+  --notes "$(grep -A 50 "## \[${VERSION}\]" CHANGELOG.md | tail -n +2 | sed '/^## \[/q' | head -n -1)"
+```
+
+**Required README.md sections**:
+- What problem does this skill solve?
+- `skillsmith install <author>/<name>` install command
+- Usage examples (copy-pasteable)
+- Contents table (files and what they do)
+- Requirements
+
+**Required CHANGELOG.md format**:
+```markdown
+## [X.Y.Z] - YYYY-MM-DD
+
+### Added
+- New features
+
+### Changed
+- Breaking or behavioural changes
+
+### Fixed
+- Bug fixes
+```
+
+---
+
+## Versioning & Release
+
+### Skill Pack Release: Version Drift Audit
+
+Before releasing a skill pack (e.g. `product-builder-starter`), verify bundled versions
+match their sources. Skills in a pack can silently fall behind — e.g. `linear` was
+bundled at `2.0.0` while the source had reached `2.2.3` (a 14-release gap).
+
+```bash
+# List all bundled skill versions
+for skill_md in skills/*/SKILL.md; do
+  skill=$(basename $(dirname "$skill_md"))
+  version=$(grep "^version:" "$skill_md" | head -1)
+  echo "$skill: $version"
+done
+
+# Cross-reference against installed sources
+for skill_md in ~/.claude/skills/*/SKILL.md; do
+  skill=$(basename $(dirname "$skill_md"))
+  version=$(grep "^version:" "$skill_md" | head -1)
+  echo "[source] $skill: $version"
+done
+```
+
+If a bundled version is behind: update the SKILL.md, add the missing CHANGELOG entries,
+and bump the version in the pack before tagging the release.
+
+### Frontmatter Completeness Check
+
+Run before tagging any release. Missing `version:` is a silent failure — the registry
+cannot index the skill, `skill_diff` has no baseline, and release notes are incomplete.
+
+```bash
+# Check all SKILL.md files for required fields
+for skill_md in skills/*/SKILL.md; do
+  skill=$(basename $(dirname "$skill_md"))
+  for field in name version description; do
+    grep -q "^${field}:" "$skill_md" || echo "MISSING $field in $skill/SKILL.md"
+  done
+done
+```
+
+### Monorepo Tag Convention
+
+For skill packs with multiple skills, use the `<skill-name>/v<version>` tag format:
+
+```bash
+git tag governance/v1.4.0
+git tag linear/v2.2.3
+git tag varlock/v1.0.0
+git push --tags
+```
+
+This enables per-skill version history in the same repository without tag collisions.
+
+---
+
+## Bulk Find & Replace Operations
+
+When renaming a term across a skill pack (e.g. a dependency renames like `claude-flow → ruflo`):
+
+### Step 1: Always grep case-insensitively first
+
+```bash
+# Capture ALL capitalisation variants before writing sed patterns
+grep -ri "old-term" skills/
+```
+
+Common variants to watch for — all require separate sed expressions:
+
+| Variant | Appears in |
+|---------|-----------|
+| `old-term` | Body text, code blocks |
+| `Old-Term` | Section headings (`### Old-Term MCP`) |
+| `OldTerm` | CamelCase references |
+| `OLD_TERM` | Env var names |
+
+### Step 2: Use `sed` for strings containing angle brackets
+
+The Edit tool HTML-encodes `<` and `>` as `&lt;` and `&gt;`, writing the entity as
+literal text. Always use `sed` for replacements involving placeholder strings:
+
+```bash
+# ❌ Edit tool — writes &lt;project&gt;-dev-1 as literal text
+# ✅ Use sed instead:
+sed -i '' 's/old-container/<project>-dev-1/g' path/to/file.md
+```
+
+### Step 3: Verify with a post-rename grep
+
+```bash
+grep -ri "old-term" skills/   # Should return empty
+```
+
 ---
 
 ## Common Mistakes
@@ -512,6 +686,32 @@ Keep response under 500 tokens unless explicitly requested.
 | bash, npm, command | Bash |
 | search, find, grep | Grep, Glob |
 | web, fetch, url | WebFetch |
+
+### Execution Context Requirements (SMI-2613)
+
+When a skill dispatches to a Task subagent that uses Write, Edit, or Bash tools, it **must** include an "Execution Context Requirements" section. Background subagents auto-deny unapproved tools, causing silent failures.
+
+**Include this section when the skill uses the thin dispatcher pattern** (dispatches to `agent-prompt.md` via `general-purpose` subagent):
+
+```markdown
+## Execution Context Requirements
+
+This skill spawns a general-purpose subagent that performs file operations.
+
+**Foreground execution required**: [Yes if Write/Edit/Bash used, No if read-only]
+
+**Required tools**: [List tools the subagent needs, e.g., Read, Write, Edit, Bash, Grep, Glob]
+
+**Fallback**: If tools are denied, the subagent returns recommendations as text
+for the coordinator to apply.
+```
+
+**Decision logic**:
+- If the subagent only uses Read, Grep, Glob, WebFetch, WebSearch → No execution context section needed
+- If the subagent uses Write, Edit, or Bash → **Must** add execution context section
+- If the subagent delegates edits back to the coordinator → Document the delegation pattern
+
+After generating a skill, validate it with `skillsmith validate` to check for missing execution context documentation.
 
 ### CLI Commands for Subagent Generation
 
