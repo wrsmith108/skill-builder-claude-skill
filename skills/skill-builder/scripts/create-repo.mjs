@@ -166,7 +166,7 @@ log(`\n${GREEN}${BOLD}✓ Repository created successfully!${RESET}\n`);
 const username = run('gh api user --jq .login', { silent: true }).trim();
 log(`${BOLD}URL:${RESET} https://github.com/${username}/${name}`);
 log(`${BOLD}Clone:${RESET} git clone https://github.com/${username}/${name}`);
-log(`${BOLD}Install:${RESET} claude plugin add github:${username}/${name}\n`);
+log(`${BOLD}Install:${RESET} claude plugin install github:${username}/${name}\n`);
 
 // Next steps
 log(`${BOLD}Next Steps:${RESET}`);
