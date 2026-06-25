@@ -67,17 +67,21 @@ node skills/skill-builder/scripts/create-repo.mjs \
 
 ```bash
 mkdir -p <skill-name>-claude-skill/skills/<skill-name>/scripts
+mkdir -p <skill-name>-claude-skill/.claude-plugin
 mkdir -p <skill-name>-claude-skill/templates  # Optional
 ```
 
 ### Step 2: Copy Core Templates
 
-| Template | Purpose | Customize |
-|----------|---------|-----------|
-| `SKILL-template.md` | Core skill definition | Name, description, triggers, content |
-| `CHANGELOG-template.md` | Version history | Add initial features, lessons learned |
-| `README-template.md` | User documentation | Installation, usage, examples |
-| `package-template.json` | Plugin metadata | Name, topics, scripts |
+| Template | Copy to | Purpose | Customize |
+|----------|---------|---------|-----------|
+| `SKILL-template.md` | `skills/<name>/SKILL.md` | Core skill definition | Name, description, triggers, content |
+| `CHANGELOG-template.md` | `CHANGELOG.md` | Version history | Add initial features, lessons learned |
+| `README-template.md` | `README.md` | User documentation | Installation, usage, examples |
+| `package-template.json` | `package.json` | npm metadata | Name (kebab-case), topics |
+| `plugin-template.json` | `.claude-plugin/plugin.json` | Plugin manifest (source of truth) | Name (**kebab-case**), description, version |
+| `marketplace-template.json` | `.claude-plugin/marketplace.json` | Marketplace manifest (enables install) | Marketplace name, plugin name (**kebab-case**) |
+| `setup-template.mjs` | `skills/<name>/scripts/setup.mjs` | Optional setup-verification script | Add checks for your skill's prerequisites |
 
 ### Step 3: Fill In Placeholders
 
@@ -203,6 +207,10 @@ Tables, examples, code blocks
 
 ## package.json Structure
 
+`package.json` is for npm metadata only. **Do not** put a `claude-plugin` block here — the
+Claude Code plugin manifest lives in `.claude-plugin/plugin.json` (see below), which is the
+single source of truth.
+
 ```json
 {
   "name": "claude-plugin-<skill-name>",
@@ -221,17 +229,54 @@ Tables, examples, code blocks
     "type": "git",
     "url": "https://github.com/<user>/<skill-name>-claude-skill.git"
   },
-  "files": ["skills", "templates", "README.md", "LICENSE"],
-  "scripts": {
-    "setup": "node skills/<name>/scripts/setup.mjs",
-    "check": "node skills/<name>/scripts/check.mjs"
-  },
-  "claude-plugin": {
-    "name": "<Skill Title>",
-    "description": "<Description for plugin registry>",
-    "skills": ["skills/<name>"]
-  }
+  "files": ["skills", "templates", "README.md", "LICENSE"]
 }
+```
+
+---
+
+## Plugin & Marketplace Manifests (`.claude-plugin/`)
+
+For the skill to be installable via `claude plugin install`, the repo needs **two** manifests.
+Copy `plugin-template.json` and `marketplace-template.json` into `.claude-plugin/`.
+
+**CRITICAL:** plugin and marketplace `name` fields must be **kebab-case with no spaces**
+(use `<skill-name>`, never the Title-Case `<Skill Title>`). A space here means
+`/<skill-name>` will not invoke the skill.
+
+`.claude-plugin/plugin.json`:
+
+```json
+{
+  "name": "<skill-name>",
+  "description": "<One sentence>",
+  "version": "1.0.0",
+  "author": { "name": "<author>", "url": "https://github.com/<user>" },
+  "license": "MIT"
+}
+```
+
+`.claude-plugin/marketplace.json` (skills auto-discover from `skills/` under `source`):
+
+```json
+{
+  "name": "<user>-skills",
+  "owner": { "name": "<author>" },
+  "plugins": [
+    {
+      "name": "<skill-name>",
+      "source": ".",
+      "description": "<One sentence>"
+    }
+  ]
+}
+```
+
+Users then install with:
+
+```bash
+claude plugin marketplace add <user>/<skill-name>-claude-skill
+claude plugin install <skill-name>@<user>-skills
 ```
 
 ---
@@ -262,8 +307,9 @@ Before publishing:
 - [ ] All placeholders replaced (no `{{...}}` remaining)
 - [ ] No project-specific references (generic examples only)
 - [ ] CHANGELOG.md has initial release with "Lesson Learned"
-- [ ] README.md has installation instructions
-- [ ] package.json has `claude-plugin` section
+- [ ] README.md has installation instructions (the `claude plugin marketplace add` + `install` flow)
+- [ ] `.claude-plugin/plugin.json` exists with a **kebab-case** `name` (no spaces)
+- [ ] `.claude-plugin/marketplace.json` exists so the plugin is installable
 - [ ] LICENSE file exists (MIT)
 - [ ] Topics include `claude`, `claude-code`, `claude-plugin`
 

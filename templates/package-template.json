@@ -29,12 +29,5 @@
   "scripts": {
     "setup": "node skills/{{SKILL_NAME}}/scripts/setup.mjs",
     "check": "node skills/{{SKILL_NAME}}/scripts/setup.mjs"
-  },
-  "claude-plugin": {
-    "name": "{{SKILL_TITLE}}",
-    "description": "{{PLUGIN_DESCRIPTION}}",
-    "skills": [
-      "skills/{{SKILL_NAME}}"
-    ]
   }
 }

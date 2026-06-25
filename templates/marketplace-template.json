@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "{{AUTHOR}}-skills",
+  "description": "Claude Code skills by {{AUTHOR}}.",
+  "owner": {
+    "name": "{{AUTHOR}}"
+  },
+  "plugins": [
+    {
+      "name": "{{SKILL_NAME}}",
+      "source": ".",
+      "description": "{{DESCRIPTION}}"
+    }
+  ]
+}

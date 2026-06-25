@@ -10,13 +10,16 @@ A [Claude Code](https://claude.ai/code) skill for {{DESCRIPTION_LOWERCASE}}.
 
 ## Quick Start
 
-### Option A: One-liner (Recommended)
+### Option A: Plugin marketplace (Recommended)
 
 ```bash
-mkdir -p ~/.claude/skills/{{SKILL_NAME}} && curl -sSL https://raw.githubusercontent.com/{{AUTHOR}}/{{SKILL_NAME}}-claude-skill/main/skills/{{SKILL_NAME}}/SKILL.md -o ~/.claude/skills/{{SKILL_NAME}}/SKILL.md
+claude plugin marketplace add {{AUTHOR}}/{{SKILL_NAME}}-claude-skill
+claude plugin install {{SKILL_NAME}}@{{AUTHOR}}-skills
 ```
 
-### Option B: Manual Installation
+> The same two steps work in-session as `/plugin marketplace add` and `/plugin install`.
+
+### Option B: Manual clone (offline / no-marketplace fallback)
 
 ```bash
 git clone https://github.com/{{AUTHOR}}/{{SKILL_NAME}}-claude-skill /tmp/{{SKILL_NAME}}-skill
@@ -24,10 +27,20 @@ cp -r /tmp/{{SKILL_NAME}}-skill/skills/{{SKILL_NAME}} ~/.claude/skills/
 rm -rf /tmp/{{SKILL_NAME}}-skill
 ```
 
-### Verify Setup
+### Option C: Single-file curl ({{SKILL_NAME}} SKILL.md only)
+
+> ⚠️ Fetches only `SKILL.md` — not scripts or other skills. Use only for a single-file skill.
 
 ```bash
-node scripts/setup.mjs
+mkdir -p ~/.claude/skills/{{SKILL_NAME}} && curl -sSL https://raw.githubusercontent.com/{{AUTHOR}}/{{SKILL_NAME}}-claude-skill/main/skills/{{SKILL_NAME}}/SKILL.md -o ~/.claude/skills/{{SKILL_NAME}}/SKILL.md
+```
+
+### Verify Setup (optional)
+
+If your skill ships a setup-verification script:
+
+```bash
+node skills/{{SKILL_NAME}}/scripts/setup.mjs
 ```
 
 ## How It Works
@@ -64,10 +77,13 @@ When Claude detects trigger phrases like {{TRIGGER_PHRASES}}, this skill activat
 ├── README.md
 ├── CHANGELOG.md
 ├── package.json
+├── .claude-plugin/
+│   ├── plugin.json
+│   └── marketplace.json
 ├── skills/{{SKILL_NAME}}/
 │   ├── SKILL.md
 │   └── scripts/
-│       └── setup.mjs
+│       └── setup.mjs        # Optional setup-verification script
 └── templates/           # Optional
     └── ...
 ```

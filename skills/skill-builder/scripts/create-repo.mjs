@@ -16,7 +16,7 @@
  */
 
 import { execSync } from 'child_process';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { basename } from 'path';
 
 // ANSI colors
@@ -115,12 +115,19 @@ try {
 }
 
 // Required files check
-const requiredFiles = ['README.md', 'LICENSE', 'package.json', 'skills'];
+const requiredFiles = [
+  'README.md',
+  'LICENSE',
+  'package.json',
+  'skills',
+  '.claude-plugin/plugin.json',
+  '.claude-plugin/marketplace.json',
+];
 for (const file of requiredFiles) {
   if (existsSync(file)) {
     success(`${file} exists`);
   } else {
-    warn(`${file} missing (recommended)`);
+    warn(`${file} missing (recommended) — see templates/`);
   }
 }
 
@@ -166,7 +173,26 @@ log(`\n${GREEN}${BOLD}✓ Repository created successfully!${RESET}\n`);
 const username = run('gh api user --jq .login', { silent: true }).trim();
 log(`${BOLD}URL:${RESET} https://github.com/${username}/${name}`);
 log(`${BOLD}Clone:${RESET} git clone https://github.com/${username}/${name}`);
-log(`${BOLD}Install:${RESET} claude plugin install github:${username}/${name}\n`);
+
+// Print the working install command(s), derived from the repo's marketplace manifest.
+// `claude plugin install` resolves plugins from a marketplace, so a marketplace.json is
+// required — `claude plugin install github:<repo>` does NOT work without it.
+const marketplacePath = '.claude-plugin/marketplace.json';
+if (existsSync(marketplacePath)) {
+  try {
+    const mkt = JSON.parse(readFileSync(marketplacePath, 'utf-8'));
+    const pluginName = mkt.plugins?.[0]?.name || name;
+    log(`${BOLD}Install:${RESET}`);
+    log(`  claude plugin marketplace add ${username}/${name}`);
+    log(`  claude plugin install ${pluginName}@${mkt.name}\n`);
+  } catch {
+    warn('.claude-plugin/marketplace.json present but could not be parsed; skipping install hint');
+  }
+} else {
+  warn('No .claude-plugin/marketplace.json found — add one (see templates/marketplace-template.json)');
+  info('Without it, `claude plugin install` cannot resolve this skill.');
+  log('');
+}
 
 // Next steps
 log(`${BOLD}Next Steps:${RESET}`);
