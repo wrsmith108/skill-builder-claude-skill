@@ -1,6 +1,7 @@
 ---
 name: skill-builder
 description: Create new Claude Code skills with best practices. Use when user wants to create, extract, or build a new skill. Provides templates and GitHub automation. Trigger phrases include "create a skill", "build a skill", "extract a skill", "new skill", "/skill-builder".
+version: 1.4.0
 allowed-tools:
   - Bash
   - Read

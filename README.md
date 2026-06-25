@@ -104,13 +104,16 @@ node skills/skill-builder/scripts/create-repo.mjs \
 
 ## Templates Included
 
-| Template | Purpose |
-|----------|---------|
-| `SKILL-template.md` | Core skill definition |
-| `CHANGELOG-template.md` | Version history with "Lesson Learned" |
-| `README-template.md` | User documentation |
-| `package-template.json` | Plugin metadata |
-| `LICENSE-template` | MIT license |
+| Template | Copy to | Purpose |
+|----------|---------|---------|
+| `SKILL-template.md` | `skills/<name>/SKILL.md` | Core skill definition |
+| `CHANGELOG-template.md` | `CHANGELOG.md` | Version history with "Lesson Learned" |
+| `README-template.md` | `README.md` | User documentation |
+| `package-template.json` | `package.json` | npm metadata |
+| `plugin-template.json` | `.claude-plugin/plugin.json` | Plugin manifest (source of truth) |
+| `marketplace-template.json` | `.claude-plugin/marketplace.json` | Marketplace manifest (enables install) |
+| `setup-template.mjs` | `skills/<name>/scripts/setup.mjs` | Optional setup-verification script |
+| `LICENSE-template` | `LICENSE` | MIT license |
 
 ## Best Practices Enforced
 

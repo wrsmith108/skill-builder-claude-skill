@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Plugin marketplace** — `.claude-plugin/marketplace.json` makes this repo an installable marketplace. `claude plugin marketplace add wrsmith108/skill-builder-claude-skill` + `claude plugin install skill-builder@wrsmith108-skills` now works, resolving the *"not found in any configured marketplace"* error (#1).
 - **`skill-reviewer` skill** — the former top-level `SKILL.md` (review / validate / generalize / publish existing skills) is recovered as a proper nested skill at `skills/skill-reviewer/`, with its `scripts/` (`validate-skill.ts`, `generate-subagent.ts`) and `references/` relocated alongside it. The plugin now ships two skills: `skill-builder` (create) and `skill-reviewer` (review).
-- **Scaffolder marketplace support** — `create-repo.mjs` now scaffolds `.claude-plugin/plugin.json` + `marketplace.json` into new repos and prints the working two-step install. New `plugin-template.json` and `marketplace-template.json` templates added.
+- **Scaffolder marketplace support** — `create-repo.mjs` now prints the working two-step install (derived from the repo's `marketplace.json`) and pre-flight-checks for the `.claude-plugin/` manifests, warning (with a pointer to `templates/`) when they are missing. New `plugin-template.json` and `marketplace-template.json` provide them; the author copies them in alongside the other templates.
 
 ### Fixed
 
