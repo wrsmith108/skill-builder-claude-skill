@@ -1,0 +1,15 @@
+{
+  "name": "{{SKILL_NAME}}",
+  "description": "{{DESCRIPTION}}",
+  "version": "1.0.0",
+  "author": {
+    "name": "{{AUTHOR}}",
+    "url": "https://github.com/{{AUTHOR}}"
+  },
+  "repository": "https://github.com/{{AUTHOR}}/{{SKILL_NAME}}-claude-skill",
+  "license": "MIT",
+  "keywords": [
+    "claude-skill",
+    "{{SKILL_NAME}}"
+  ]
+}

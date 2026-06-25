@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "wrsmith108-skills",
+  "description": "Claude Code skills by wrsmith108.",
+  "owner": {
+    "name": "Will Smith"
+  },
+  "plugins": [
+    {
+      "name": "skill-builder",
+      "source": ".",
+      "description": "Create, review, and publish Claude Code skills with templates and best practices from mature skill examples."
+    }
+  ]
+}

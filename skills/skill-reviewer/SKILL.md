@@ -1,17 +1,23 @@
 ---
-name: Skill Builder
+name: skill-reviewer
 description: >
-  This skill should be used when the user asks to "create a skill", "update a skill",
-  "review my skill", "improve skill quality", "publish a skill", "generalize skill",
-  "check for hardcoded values", "review for specific references", "validate skill for publishing",
-  or when modifying any skill in ~/.claude/skills/. Enforces generalization rules and
-  quality standards for skills intended for public use.
-version: 1.3.0
+  This skill should be used when the user asks to "review my skill", "update a skill",
+  "improve skill quality", "publish a skill", "generalize skill", "check for hardcoded values",
+  "review for specific references", or "validate skill for publishing" — i.e. reviewing,
+  validating, generalizing, or publishing an EXISTING Claude Code skill for public distribution.
+  Enforces generalization rules and quality standards. To create a NEW skill from scratch, use
+  the skill-builder skill instead.
+version: 1.4.0
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Glob
+  - Grep
 triggers:
   keywords:
-    - create a skill
-    - update a skill
     - review my skill
+    - update a skill
     - improve skill quality
     - publish a skill
     - generalize skill
@@ -26,14 +32,13 @@ triggers:
   paths:
     - ~/.claude/skills/**
   explicit:
-    - /skill-builder
     - /validate-skill
     - /publish-plugin
 ---
 
-# Skill Builder
+# Skill Reviewer
 
-Build, update, and validate Claude Code skills following best practices for public distribution.
+Review, validate, generalize, and publish existing Claude Code skills following best practices for public distribution. (To scaffold a brand-new skill, use the companion **skill-builder** skill.)
 
 ---
 
@@ -152,7 +157,7 @@ skill-name/
 └── examples/             # Optional: Working examples
 ```
 
-**README.md must include**: problem statement, install command (`skillsmith install <author>/<name>`), usage examples, contents table, requirements.
+**README.md must include**: problem statement, install command (the Claude Code plugin marketplace flow — `claude plugin marketplace add <author>/<repo>` then `claude plugin install <plugin>@<marketplace>`; `skillsmith install <author>/<name>` is an alternative), usage examples, contents table, requirements.
 
 **CHANGELOG.md must include**: `## [X.Y.Z] - YYYY-MM-DD` entry for every version with Added/Changed/Fixed sections.
 
@@ -409,7 +414,7 @@ gh release create "v${VERSION}" \
 
 **Required README.md sections**:
 - What problem does this skill solve?
-- `skillsmith install <author>/<name>` install command
+- Install command — Claude Code plugin marketplace flow (`claude plugin marketplace add <author>/<repo>` then `claude plugin install <plugin>@<marketplace>`); `skillsmith install <author>/<name>` is an alternative
 - Usage examples (copy-pasteable)
 - Contents table (files and what they do)
 - Requirements
@@ -626,11 +631,9 @@ The Linear skill update revealed common patterns to avoid:
 Run before committing skill changes:
 
 ```bash
-# Validate a skill
+# Validate a skill (structure, generalization, secret-exposure, env-var and
+# plugin.json version-sync checks are all built into this one script)
 npx tsx scripts/validate-skill.ts path/to/skill
-
-# Check for project-specific content
-npx tsx scripts/check-generalization.ts path/to/skill
 ```
 
 ---
@@ -880,12 +883,10 @@ To enable hooks in Claude Code, add to `.claude/settings.json`:
 
 ### Reference Files
 - **`references/generalization-patterns.md`** - Detailed patterns for generalizing skills
-- **`references/linear-retro.md`** - Full retrospective from Linear skill update
 - **`references/orchestrator-delegation.md`** - Delegation patterns for subagents
 
 ### Scripts
-- **`scripts/validate-skill.ts`** - Validate skill structure and content
-- **`scripts/check-generalization.ts`** - Check for project-specific content
+- **`scripts/validate-skill.ts`** - Validate skill structure, generalization (project-specific content), secret exposure, env-var documentation, and plugin.json version sync
 - **`scripts/generate-subagent.ts`** - Generate companion subagent for a skill
 
 ---
@@ -962,7 +963,7 @@ Anthropic will reject submissions without a quality README.
 Anthropic's security review checks for a quality README with at minimum:
 
 - [ ] **Features** section (what the skill does)
-- [ ] **Installation** section (`skillsmith install <org>/<name>` or manual copy instructions)
+- [ ] **Installation** section (Claude Code plugin marketplace flow, `skillsmith install <org>/<name>`, or manual copy instructions)
 - [ ] **Usage** section with trigger phrases and examples
 - [ ] **Requirements** section (env vars, tools, prerequisites)
 - [ ] **License** declaration
@@ -1057,8 +1058,8 @@ This hook provides a reminder when editing skill files. For full validation, run
 # Check for project-specific content
 grep -ri "skillsmith\|smi-[0-9]\|specific-uuid" ~/.claude/skills/<skill-name>/
 
-# Or use the validation script
-npx tsx scripts/check-generalization.ts ~/.claude/skills/<skill-name>/
+# Or use the validation script (generalization check is built in)
+npx tsx scripts/validate-skill.ts ~/.claude/skills/<skill-name>/
 ```
 
 ### CLAUDE.md Integration

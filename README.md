@@ -11,19 +11,57 @@ A meta-skill for creating Claude Code skills following proven patterns.
 
 ## Quick Start
 
-### Option A: One-liner (Recommended)
+### Option A: Plugin marketplace (Recommended)
+
+This repo is a Claude Code plugin marketplace. Add it, then install the plugin — this
+installs the **whole** plugin (both skills, their scripts, and templates):
+
+```bash
+claude plugin marketplace add wrsmith108/skill-builder-claude-skill
+claude plugin install skill-builder@wrsmith108-skills
+```
+
+> The same two steps work in-session as the `/plugin marketplace add` and `/plugin install`
+> slash commands.
+
+### Option B: Manual clone (offline / no-marketplace fallback)
+
+Copies the full plugin (both skills + scripts) into your skills directory:
+
+```bash
+git clone https://github.com/wrsmith108/skill-builder-claude-skill /tmp/skill-builder-skill
+cp -r /tmp/skill-builder-skill/skills/skill-builder ~/.claude/skills/
+cp -r /tmp/skill-builder-skill/skills/skill-reviewer ~/.claude/skills/
+rm -rf /tmp/skill-builder-skill
+```
+
+### Option C: Single-file curl (skill-builder only)
+
+> ⚠️ This fetches **only** `SKILL.md` — it does **not** install scripts, templates, or the
+> `skill-reviewer` skill. Use it only if you want the create-skill instructions and nothing else.
 
 ```bash
 mkdir -p ~/.claude/skills/skill-builder && curl -sSL https://raw.githubusercontent.com/wrsmith108/skill-builder-claude-skill/main/skills/skill-builder/SKILL.md -o ~/.claude/skills/skill-builder/SKILL.md
 ```
 
-### Option B: Manual Installation
+### Upgrading from an older (pre-1.4.0) install
+
+Earlier versions placed a single (and, on git-clone, broken) skill at
+`~/.claude/skills/skill-builder/`. Remove that stale copy before reinstalling so it does not
+shadow the plugin:
 
 ```bash
-git clone https://github.com/wrsmith108/skill-builder-claude-skill /tmp/skill-builder-skill
-cp -r /tmp/skill-builder-skill/skills/skill-builder ~/.claude/skills/
-rm -rf /tmp/skill-builder-skill
+rm -rf ~/.claude/skills/skill-builder
 ```
+
+## Which skill does what?
+
+This plugin ships **two** skills — pick by intent:
+
+| Skill | Use when you want to… | Trigger phrases |
+|-------|-----------------------|-----------------|
+| `skill-builder` | **Create a NEW** skill from scratch | "create a skill", "build a skill", "extract a skill", `/skill-builder` |
+| `skill-reviewer` | **Review / validate / generalize / publish an EXISTING** skill | "review my skill", "validate skill", "generalize skill", "publish a skill", `/validate-skill` |
 
 ## How It Works
 
@@ -66,13 +104,16 @@ node skills/skill-builder/scripts/create-repo.mjs \
 
 ## Templates Included
 
-| Template | Purpose |
-|----------|---------|
-| `SKILL-template.md` | Core skill definition |
-| `CHANGELOG-template.md` | Version history with "Lesson Learned" |
-| `README-template.md` | User documentation |
-| `package-template.json` | Plugin metadata |
-| `LICENSE-template` | MIT license |
+| Template | Copy to | Purpose |
+|----------|---------|---------|
+| `SKILL-template.md` | `skills/<name>/SKILL.md` | Core skill definition |
+| `CHANGELOG-template.md` | `CHANGELOG.md` | Version history with "Lesson Learned" |
+| `README-template.md` | `README.md` | User documentation |
+| `package-template.json` | `package.json` | npm metadata |
+| `plugin-template.json` | `.claude-plugin/plugin.json` | Plugin manifest (source of truth) |
+| `marketplace-template.json` | `.claude-plugin/marketplace.json` | Marketplace manifest (enables install) |
+| `setup-template.mjs` | `skills/<name>/scripts/setup.mjs` | Optional setup-verification script |
+| `LICENSE-template` | `LICENSE` | MIT license |
 
 ## Best Practices Enforced
 
@@ -101,15 +142,24 @@ skill-builder-claude-skill/
 ├── CHANGELOG.md
 ├── BEST-PRACTICES.md
 ├── package.json
-├── skills/skill-builder/
-│   ├── SKILL.md
-│   └── scripts/
-│       └── create-repo.mjs
+├── .claude-plugin/
+│   ├── plugin.json         # Plugin manifest (source of truth)
+│   └── marketplace.json    # Marketplace manifest
+├── skills/
+│   ├── skill-builder/      # Create NEW skills
+│   │   ├── SKILL.md
+│   │   └── scripts/create-repo.mjs
+│   └── skill-reviewer/     # Review / validate / publish EXISTING skills
+│       ├── SKILL.md
+│       ├── scripts/        # validate-skill.ts, generate-subagent.ts
+│       └── references/
 └── templates/
     ├── SKILL-template.md
     ├── CHANGELOG-template.md
     ├── README-template.md
     ├── package-template.json
+    ├── plugin-template.json
+    ├── marketplace-template.json
     └── LICENSE-template
 ```
 
@@ -125,6 +175,14 @@ Before publishing your new skill:
 - [ ] Topics include `claude`, `claude-code`, `claude-plugin`
 
 ## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for the full history. Highlights:
+
+### 1.4.0
+
+- **Added**: `.claude-plugin/marketplace.json` so the repo installs as a plugin marketplace (`claude plugin install skill-builder@wrsmith108-skills`) — fixes the "not found in any configured marketplace" install error
+- **Added**: `skill-reviewer` skill (review / validate / generalize / publish existing skills), recovered from the former top-level `SKILL.md` and now a proper nested skill alongside `skill-builder`
+- **Fixed**: scaffolder (`create-repo.mjs`) and templates no longer emit a broken install command or a space-containing plugin name
 
 ### 1.0.1 (2026-02-10)
 
