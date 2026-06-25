@@ -17,8 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Install command** — `create-repo.mjs` and `README-template.md` no longer emit the non-resolving `claude plugin install github:<repo>` form (#1).
 - **Plugin name with space** — `package-template.json` set the plugin name from `{{SKILL_TITLE}}` (a spaced human title), re-introducing the invocation bug from #2 in every scaffolded skill; it now uses kebab-case `{{SKILL_NAME}}` (#2).
-- **Manifest drift** — `.claude-plugin/plugin.json` is now the single source of truth; the duplicate `claude-plugin` block was removed from `package.json`. Versions reconciled to `1.4.0` across `plugin.json`, `package.json`, and the `skill-reviewer` frontmatter.
+- **Manifest drift** — `.claude-plugin/plugin.json` is now the single source of truth; the duplicate `claude-plugin` block was removed from `package.json`. Versions reconciled to `1.4.0` across `plugin.json`, `package.json`, and both skill frontmatters.
 - **Dangling references** — removed references to the non-existent `scripts/check-generalization.ts` (its checks live inside `validate-skill.ts`) and `references/linear-retro.md`; resolved the missing `setup.mjs` template reference.
+- **Shell-injection hardening** — `create-repo.mjs` now runs every command via `execFileSync` with argument arrays instead of interpolating user input (`name`, `description`, `topics`) into shell strings; the `$(…)` sub-shell was removed.
+- **Validator multi-skill support** — `validate-skill.ts` now walks up to find a repo-root `.claude-plugin/plugin.json`, so version-sync works for a single plugin that ships multiple skills under `skills/` (not just a per-skill manifest).
 
 ### Lesson Learned
 
@@ -53,9 +55,16 @@ Retrospective learnings from `product-builder-starter` v1.0.0 release (SMI-2903,
 
 ---
 
-## [1.1.0] - 2026-01-?? (undocumented)
+## [1.1.0] - 2026-01-23
 
-> Note: frontmatter was bumped to 1.1.0 at an unknown date. Changes include generalization enforcement, subagent pair generation, enforcement hooks pattern, and execution context requirements (SMI-2613).
+### Added
+
+- Automatic triggering (keyword / path / explicit triggers) and generalization enforcement
+- Subagent pair generation, enforcement hooks pattern, and execution context requirements
+
+### Source
+
+SMI-2613. (Released ahead of the `1.0.1` patch below, which was a later back-port to the 1.0.x line — hence the non-monotonic dates; entries remain ordered by semver per Keep a Changelog.)
 
 ---
 
@@ -92,7 +101,7 @@ Creating skills without a template leads to inconsistent quality and missing ess
 
 ## Future Improvements (Planned)
 
-### [1.1.0] - TBD
+### [1.5.0] - TBD
 - [ ] Interactive wizard mode (step-by-step questions)
 - [ ] Skill scaffolding CLI command
 - [ ] Automatic placeholder detection and validation

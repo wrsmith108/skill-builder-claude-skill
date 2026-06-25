@@ -308,12 +308,31 @@ function checkEnvironmentDocumentation(skillPath: string): ValidationResult {
 }
 
 
+/**
+ * Locate the plugin manifest for a skill. Skills may live in their own directory
+ * (`<skill>/.claude-plugin/plugin.json`) OR be one of several skills under a single
+ * repo-root plugin (`<repo>/.claude-plugin/plugin.json` with `marketplace.json`
+ * `source: "."`). Walk up from the skill dir until we find one, stopping at the repo
+ * root (a directory containing `.git`) or the filesystem root.
+ */
+function findPluginJson(skillPath: string): string | undefined {
+  let dir = path.resolve(skillPath)
+  while (true) {
+    const candidate = path.join(dir, '.claude-plugin', 'plugin.json')
+    if (fs.existsSync(candidate)) return candidate
+    if (fs.existsSync(path.join(dir, '.git'))) return undefined // repo root, no manifest
+    const parent = path.dirname(dir)
+    if (parent === dir) return undefined // filesystem root
+    dir = parent
+  }
+}
+
 function checkPluginJsonVersionSync(skillPath: string): ValidationResult {
   const result: ValidationResult = { passed: true, errors: [], warnings: [] }
 
-  const pluginJsonPath = path.join(skillPath, '.claude-plugin', 'plugin.json')
-  if (!fs.existsSync(pluginJsonPath)) {
-    return result // Not a marketplace skill — no check needed
+  const pluginJsonPath = findPluginJson(skillPath)
+  if (!pluginJsonPath) {
+    return result // Not part of a plugin — no check needed
   }
 
   // Read plugin.json version
@@ -354,10 +373,11 @@ function checkPluginJsonVersionSync(skillPath: string): ValidationResult {
   }
 
   if (skillVersion !== pluginVersion) {
+    const relPluginPath = path.relative(skillPath, pluginJsonPath) || pluginJsonPath
     result.passed = false
     result.errors.push(
-      `Version mismatch: SKILL.md says ${skillVersion} but .claude-plugin/plugin.json says ${pluginVersion}\n` +
-      `  Fix: Update .claude-plugin/plugin.json version to match SKILL.md`
+      `Version mismatch: SKILL.md says ${skillVersion} but ${relPluginPath} says ${pluginVersion}\n` +
+      `  Fix: Update ${relPluginPath} version to match SKILL.md`
     )
   }
 

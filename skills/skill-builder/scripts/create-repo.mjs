@@ -15,7 +15,7 @@
  *   - Git repository initialized in current directory
  */
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { basename } from 'path';
 
@@ -47,9 +47,12 @@ function info(msg) {
   console.log(`${BLUE}ℹ${RESET} ${msg}`);
 }
 
-function run(cmd, options = {}) {
+// Run a command as (file, args[]) via execFileSync — no shell is spawned, so
+// user-supplied values (name, description, topics) cannot be interpreted as shell
+// syntax (no command injection from quotes, $(...), backticks, ;, etc.).
+function run(file, args = [], options = {}) {
   try {
-    return execSync(cmd, { encoding: 'utf-8', stdio: options.silent ? 'pipe' : 'inherit', ...options });
+    return execFileSync(file, args, { encoding: 'utf-8', stdio: options.silent ? 'pipe' : 'inherit', ...options });
   } catch (e) {
     if (!options.ignoreError) {
       throw e;
@@ -78,7 +81,7 @@ log(`\n${BOLD}Pre-flight Checks${RESET}`);
 
 // Check gh CLI
 try {
-  run('gh --version', { silent: true });
+  run('gh', ['--version'], { silent: true });
   success('gh CLI installed');
 } catch {
   error('gh CLI not installed');
@@ -88,7 +91,7 @@ try {
 
 // Check gh auth
 try {
-  run('gh auth status', { silent: true });
+  run('gh', ['auth', 'status'], { silent: true });
   success('gh CLI authenticated');
 } catch {
   error('gh CLI not authenticated');
@@ -106,7 +109,7 @@ success('Git repository exists');
 
 // Check for commits
 try {
-  run('git rev-parse HEAD', { silent: true });
+  run('git', ['rev-parse', 'HEAD'], { silent: true });
   success('Has commits');
 } catch {
   error('No commits found');
@@ -140,14 +143,15 @@ info(`Topics: ${topics.join(', ')}`);
 try {
   // Create repo
   log('\nCreating GitHub repository...');
-  run(`gh repo create ${name} --public --description "${description}" --source . --push`);
+  run('gh', ['repo', 'create', name, '--public', '--description', description, '--source', '.', '--push']);
   success('Repository created and pushed');
 } catch (e) {
   // Repo might exist, try pushing
   warn('Repository may already exist, trying to push...');
   try {
-    run(`git remote set-url origin https://github.com/$(gh api user --jq .login)/${name}.git`, { ignoreError: true });
-    run('git push -u origin main');
+    const ghUser = run('gh', ['api', 'user', '--jq', '.login'], { silent: true }).trim();
+    run('git', ['remote', 'set-url', 'origin', `https://github.com/${ghUser}/${name}.git`], { ignoreError: true });
+    run('git', ['push', '-u', 'origin', 'main']);
     success('Pushed to existing repository');
   } catch {
     error('Failed to push. Check repository settings.');
@@ -157,10 +161,10 @@ try {
 
 // Add topics
 log('\nAdding topics for discoverability...');
-const topicArgs = topics.map(t => `--add-topic ${t}`).join(' ');
+const topicFlags = topics.flatMap(t => ['--add-topic', t]);
 try {
-  const username = run('gh api user --jq .login', { silent: true }).trim();
-  run(`gh repo edit ${username}/${name} ${topicArgs}`, { silent: true });
+  const username = run('gh', ['api', 'user', '--jq', '.login'], { silent: true }).trim();
+  run('gh', ['repo', 'edit', `${username}/${name}`, ...topicFlags], { silent: true });
   success(`Added ${topics.length} topics`);
 } catch {
   warn('Could not add all topics (some may be invalid)');
@@ -170,7 +174,7 @@ try {
 log('\n' + '━'.repeat(50));
 log(`\n${GREEN}${BOLD}✓ Repository created successfully!${RESET}\n`);
 
-const username = run('gh api user --jq .login', { silent: true }).trim();
+const username = run('gh', ['api', 'user', '--jq', '.login'], { silent: true }).trim();
 log(`${BOLD}URL:${RESET} https://github.com/${username}/${name}`);
 log(`${BOLD}Clone:${RESET} git clone https://github.com/${username}/${name}`);
 
